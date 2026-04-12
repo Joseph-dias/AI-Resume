@@ -4,7 +4,7 @@ from xai_sdk.tools import collections_search, web_search
 
 
 class ResumeChat:
-    def __init__(self, client: Client, collection_id: str, model: str = "grok-3"):
+    def __init__(self, client: Client, collection_id: str, model: str = "grok-4"):
         self._chat = client.chat.create(
             model=model,
             tools=[
