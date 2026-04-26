@@ -1,14 +1,10 @@
+import os
 from dotenv import load_dotenv
 from xai_sdk import Client
-from xai_sdk.chat import system, user
+from resume_chat import ResumeChat
 
 load_dotenv()
 
 client = Client()
-
-chat = client.chat.create(model="grok-3")
-chat.append(system("You are a helpful assistant."))
-chat.append(user("Hello! What can you help me with?"))
-
-response = chat.sample()
-print(response.content)
+resume = ResumeChat(client, collection_id=os.environ["XAI_COLLECTION_ID"])
+resume.run()
