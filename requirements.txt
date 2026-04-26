@@ -1,2 +1,4 @@
 xai-sdk
 python-dotenv
+fastapi
+uvicorn[standard]
