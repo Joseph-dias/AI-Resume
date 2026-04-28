@@ -1,0 +1,28 @@
+name: Update Version on Release
+
+on:
+  release:
+    types: [created]
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0   # Need full history for tags
+
+      - name: Set version from tag
+        run: |
+          # Strip the 'v' if present
+          VERSION=${GITHUB_REF#refs/tags/v}
+          echo "New version: $VERSION"
+          echo "$VERSION" > VERSION
+
+      - name: Commit and push the new version
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add VERSION
+          git commit -m "chore: bump version to ${GITHUB_REF#refs/tags/v}"
+          git push

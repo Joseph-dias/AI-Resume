@@ -57,6 +57,11 @@ async def reset():
     return {}
 
 
+@app.get("/VERSION")
+def get_version():
+    return FileResponse("VERSION", media_type="text/plain")
+
+
 app.mount("/static", StaticFiles(directory="static"), name="static")
 
 

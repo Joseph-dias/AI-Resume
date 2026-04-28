@@ -158,6 +158,15 @@ function HowItWorks() {
 
 //The sidebar with the profile info and links.  Persistent across the app.
 function Sidebar({ onClear }) {
+  //App version
+  const [appVersion, setAppVersion] = React.useState('...');
+  React.useEffect(() => {
+    fetch('/VERSION')
+      .then(r => r.text())
+      .then(v => setAppVersion(v.trim()))
+      .catch(() => setAppVersion('dev'));
+  }, []);
+
   //Links on the sidebar
   const links = [
     { label: 'GitHub', icon: <GithubIcon />, href: 'https://github.com/Joseph-dias' },
@@ -218,6 +227,7 @@ function Sidebar({ onClear }) {
         </button>
         <p className="sidebar__credit">
           Built by Joey · Powered by Grok-4
+          {appVersion !== '...' && ` · v${appVersion}`}
         </p>
       </div>
     </aside>
