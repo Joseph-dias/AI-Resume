@@ -1,28 +1,69 @@
-name: Update Version on Release
+name: Bump Version on PR Merge
 
 on:
-  release:
-    types: [created]
+  pull_request:
+    types: [closed]
+    branches:
+      - main
 
 jobs:
-  update-version:
+  bump-version:
+    if: github.event.pull_request.merged == true
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
         with:
-          fetch-depth: 0   # Need full history for tags
+          fetch-depth: 0
 
-      - name: Set version from tag
+      - name: Determine version bump type
+        id: bump_type
         run: |
-          # Strip the 'v' if present
-          VERSION=${GITHUB_REF#refs/tags/v}
-          echo "New version: $VERSION"
-          echo "$VERSION" > VERSION
+          LABELS="${{ join(github.event.pull_request.labels.*.name, ',') }}"
+          echo "PR Labels: $LABELS"
+          
+          if [[ "$LABELS" == *"major"* ]]; then
+            echo "type=major" >> $GITHUB_OUTPUT
+          elif [[ "$LABELS" == *"minor"* ]]; then
+            echo "type=minor" >> $GITHUB_OUTPUT
+          elif [[ "$LABELS" == *"patch"* ]]; then
+            echo "type=patch" >> $GITHUB_OUTPUT
+          else
+            echo "type=patch" >> $GITHUB_OUTPUT  # Default to patch if no label
+          fi
 
-      - name: Commit and push the new version
+      - name: Bump version
+        id: version
+        run: |
+          CURRENT=$(cat VERSION)
+          echo "Current version: $CURRENT"
+          
+          # Parse semantic version
+          IFS='.' read -r MAJOR MINOR PATCH <<< "$CURRENT"
+          
+          case "${{ steps.bump_type.outputs.type }}" in
+            major)
+              MAJOR=$((MAJOR + 1))
+              MINOR=0
+              PATCH=0
+              ;;
+            minor)
+              MINOR=$((MINOR + 1))
+              PATCH=0
+              ;;
+            patch)
+              PATCH=$((PATCH + 1))
+              ;;
+          esac
+          
+          NEW_VERSION="$MAJOR.$MINOR.$PATCH"
+          echo "New version: $NEW_VERSION"
+          echo "$NEW_VERSION" > VERSION
+          echo "version=$NEW_VERSION" >> $GITHUB_OUTPUT
+
+      - name: Commit and push
         run: |
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git add VERSION
-          git commit -m "chore: bump version to ${GITHUB_REF#refs/tags/v}"
+          git commit -m "chore: bump version to ${{ steps.version.outputs.version }}"
           git push
