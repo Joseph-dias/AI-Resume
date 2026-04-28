@@ -10,42 +10,17 @@
 <script src="https://unpkg.com/react@18.3.1/umd/react.development.js" integrity="sha384-hD6/rw4ppMLGNu3tX5cjIb+uRZ7UkRJ6BPkLpg4hAu/6onKUg4lLsHAs9EBPT82L" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/react-dom@18.3.1/umd/react-dom.development.js" integrity="sha384-u6aeetuaXnQ38mYT8rp6sbXaQe3NL9t+IBXmnYxwkUI2Hw4bsp2Wvmx4yRQF1uAm" crossorigin="anonymous"></script>
 <script src="https://unpkg.com/@babel/standalone@7.29.0/babel.min.js" integrity="sha384-m08KidiNqLdpJqLq95G/LEi8Qvjl/xUYll3QILypMoQ65QorJ9Lvtp2RXYGBFj1y" crossorigin="anonymous"></script>
-
-<style>
-  *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
-  html, body, #root { height: 100%; width: 100%; }
-  body { font-family: 'Inter', sans-serif; background: #0f172a; overflow: hidden; }
-
-  ::-webkit-scrollbar { width: 5px; }
-  ::-webkit-scrollbar-track { background: transparent; }
-  ::-webkit-scrollbar-thumb { background: rgba(148,163,184,0.2); border-radius: 99px; }
-
-  @keyframes blink {
-    0%, 80%, 100% { opacity: 0.15; transform: scale(0.8); }
-    40% { opacity: 1; transform: scale(1); }
-  }
-  @keyframes fadeUp {
-    from { opacity: 0; transform: translateY(8px); }
-    to   { opacity: 1; transform: translateY(0); }
-  }
-  @keyframes pulse-dot {
-    0%, 100% { opacity: 0.3; }
-    50% { opacity: 1; }
-  }
-  @keyframes slideIn {
-    from { opacity: 0; transform: translateX(-6px); }
-    to   { opacity: 1; transform: translateX(0); }
-  }
-</style>
+<link rel="stylesheet" href="/static/styles.css" />
 </head>
 <body>
+
+<!--React app mount point-->
 <div id="root"></div>
 
 <script type="text/babel">
 const { useState, useEffect, useRef, useCallback } = React;
 
-const ACCENT_COLOR = "#6366f1";
-
+// Basic questions to display to the user
 const STARTER_QUESTIONS = [
   "What makes Joey's Blazor experience stand out?",
   "Has Joey worked with Salesforce integrations?",
@@ -53,75 +28,51 @@ const STARTER_QUESTIONS = [
   "What's Joey like to work with?",
 ];
 
-const SOURCE_SETS = [
-  ["Resume · Skills", "github.com"],
-  ["Resume · Projects", "linkedin.com"],
-  ["Resume · Experience"],
-  ["Resume · About"],
-];
-
 // ── Components ────────────────────────────────────────────────────────────────
 
-function Avatar({ size = 48, fontSize = 18 }) {
-  return (
-    <div style={{
-      width: size, height: size, borderRadius: '50%',
-      background: 'linear-gradient(135deg, #1e3a5f 0%, #312e81 100%)',
-      display: 'flex', alignItems: 'center', justifyContent: 'center',
-      color: '#e0e7ff', fontWeight: 700, fontSize, flexShrink: 0,
-      boxShadow: '0 2px 8px rgba(99,102,241,0.35)',
-      letterSpacing: '0.5px',
-    }}>JD</div>
+function Avatar({ size = 48 }) {
+  const sizeClass = size === 32 ? 'avatar--sm' : size === 64 ? 'avatar--lg' : 'avatar--md';
+  return ( //Avatar image
+    <img
+      src="/static/Me.jpeg"
+      alt="Joey Dias"
+      className={`avatar ${sizeClass}`}
+    />
   );
 }
 
+//Online status indicator - Purely cosmetic
 function StatusDot() {
   return (
-    <span style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', justifyContent: 'center' }}>
-      <span style={{
-        width: 8, height: 8, borderRadius: '50%', background: '#22c55e',
-        display: 'inline-block', animation: 'pulse-dot 2s ease-in-out infinite',
-      }} />
-      <span style={{
-        position: 'absolute', width: 8, height: 8, borderRadius: '50%',
-        background: '#22c55e', opacity: 0.4,
-        animation: 'pulse-dot 2s ease-in-out infinite',
-        transform: 'scale(1.8)',
-      }} />
+    <span className="status-dot">
+      <span className="status-dot__inner" />
+      <span className="status-dot__ring" />
     </span>
   );
 }
 
+//This lists the sources that the AI used for its answer.  Collapsible.
 function SourcePills({ sources }) {
   const [open, setOpen] = useState(false);
-  if (!sources || sources.length === 0) return null;
+  if (!sources || sources.length === 0) return null; //No sources
   return (
-    <div style={{ marginTop: 8 }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-          display: 'flex', alignItems: 'center', gap: 4,
-          color: '#94a3b8', fontSize: 11, fontFamily: 'inherit',
-        }}
-      >
+    <div className="sources">
+      <button onClick={() => setOpen(o => !o)} className="source-toggle">
         <svg width="12" height="12" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
           <path d="M8 7v5M8 5v1" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round"/>
         </svg>
         Sources
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s' }}>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={open ? 'chevron chevron--open' : 'chevron'}>
           <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
       </button>
+
+      {/* Displays the source when the panel is open */}
       {open && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 5, marginTop: 6, animation: 'fadeUp 0.15s ease' }}>
+        <div className="sources__list">
           {sources.map((s, i) => (
-            <span key={i} style={{
-              padding: '2px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
-              background: `${ACCENT_COLOR}18`, color: ACCENT_COLOR,
-              border: `1px solid ${ACCENT_COLOR}30`,
-            }}>{s}</span>
+            <span key={i} className="source-pill">{s}</span>
           ))}
         </div>
       )}
@@ -129,36 +80,28 @@ function SourcePills({ sources }) {
   );
 }
 
+//Blinking dots to indicate the AI is thinking.  Purely cosmetic.  Waiting for API response.
 function ThinkingDots() {
   return (
-    <div style={{ display: 'flex', gap: 5, alignItems: 'center', padding: '4px 2px' }}>
+    <div className="thinking-dots">
       {[0,1,2].map(i => (
-        <span key={i} style={{
-          width: 7, height: 7, borderRadius: '50%', background: '#94a3b8',
-          display: 'inline-block',
-          animation: `blink 1.4s ease-in-out ${i * 0.2}s infinite`,
-        }} />
+        <span key={i} className="thinking-dot" />
       ))}
     </div>
   );
 }
 
+//The bubble for the AI response.
 function BotMessage({ msg }) {
   return (
-    <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start', animation: 'fadeUp 0.2s ease' }}>
-      <Avatar size={32} fontSize={12} />
-      <div style={{
-        maxWidth: 'min(540px, 80%)',
-        background: '#ffffff', border: '1px solid #e2e8f0',
-        borderRadius: '4px 12px 12px 12px',
-        padding: '12px 16px',
-        boxShadow: '0 1px 4px rgba(15,23,42,0.06)',
-      }}>
+    <div className="bot-message">
+      <Avatar size={32} />
+      <div className="bot-bubble">
         {msg.thinking ? (
           <ThinkingDots />
         ) : (
           <>
-            <p style={{ fontSize: 15, lineHeight: 1.65, color: '#1e293b', whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+            <p className="message-text">{msg.text}</p>
             <SourcePills sources={msg.sources} />
           </>
         )}
@@ -167,58 +110,44 @@ function BotMessage({ msg }) {
   );
 }
 
+//The bubble for the user message.
 function UserMessage({ msg }) {
   return (
-    <div style={{ display: 'flex', justifyContent: 'flex-end', animation: 'fadeUp 0.2s ease' }}>
-      <div style={{
-        maxWidth: 'min(480px, 78%)',
-        background: ACCENT_COLOR, color: '#fff',
-        borderRadius: '12px 4px 12px 12px',
-        padding: '12px 16px',
-        boxShadow: `0 2px 8px ${ACCENT_COLOR}40`,
-      }}>
-        <p style={{ fontSize: 15, lineHeight: 1.65, whiteSpace: 'pre-wrap' }}>{msg.text}</p>
+    <div className="user-message">
+      <div className="user-bubble">
+        <p className="message-text">{msg.text}</p>
       </div>
     </div>
   );
 }
 
+//The "how it works" section in the sidebar.  Collapsible.
 function HowItWorks() {
   const [open, setOpen] = useState(false);
   return (
-    <div style={{ marginTop: 12 }}>
-      <button
-        onClick={() => setOpen(o => !o)}
-        style={{
-          background: 'none', border: 'none', cursor: 'pointer', padding: 0,
-          display: 'flex', alignItems: 'center', gap: 6, width: '100%',
-          color: '#94a3b8', fontSize: 12, fontFamily: 'inherit', fontWeight: 500,
-        }}
-      >
+    <div className="how-it-works">
+      <button onClick={() => setOpen(o => !o)} className="how-toggle">
         <svg width="13" height="13" viewBox="0 0 16 16" fill="none">
           <circle cx="8" cy="8" r="7" stroke="currentColor" strokeWidth="1.5"/>
           <path d="M6.5 6C6.5 5.17 7.17 4.5 8 4.5C8.83 4.5 9.5 5.17 9.5 6C9.5 6.83 8.83 7.5 8 7.5V9" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
           <circle cx="8" cy="11" r="0.6" fill="currentColor"/>
         </svg>
         How this works
-        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" style={{ transform: open ? 'rotate(180deg)' : 'none', transition: 'transform 0.2s', marginLeft: 'auto' }}>
+        <svg width="10" height="10" viewBox="0 0 10 10" fill="none" className={open ? 'how-toggle__chevron how-toggle__chevron--open' : 'how-toggle__chevron'}>
           <path d="M2 3.5L5 6.5L8 3.5" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
         </svg>
       </button>
+      {/* This is the how it works text that displays when the panel opens */}
       {open && (
-        <ul style={{
-          marginTop: 10, paddingLeft: 0, listStyle: 'none',
-          display: 'flex', flexDirection: 'column', gap: 8,
-          animation: 'slideIn 0.2s ease',
-        }}>
+        <ul className="how-list">
           {[
             "Answers are grounded in Joey's resume and project documents via RAG.",
             "Web search is restricted to Joey's public profiles and GitHub.",
             "This bot can't make commitments — reach out directly for interviews.",
           ].map((t, i) => (
-            <li key={i} style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-              <span style={{ color: ACCENT_COLOR, marginTop: 2, flexShrink: 0 }}>·</span>
-              <span style={{ color: '#94a3b8', fontSize: 12, lineHeight: 1.5 }}>{t}</span>
+            <li key={i} className="how-list__item">
+              <span className="how-list__bullet">·</span>
+              <span className="how-list__text">{t}</span>
             </li>
           ))}
         </ul>
@@ -227,87 +156,67 @@ function HowItWorks() {
   );
 }
 
-function Sidebar() {
-  const chipStyle = {
-    display: 'inline-flex', alignItems: 'center', gap: 6,
-    padding: '6px 12px', borderRadius: 999, fontSize: 12, fontWeight: 500,
-    background: 'rgba(255,255,255,0.07)', color: '#cbd5e1',
-    border: '1px solid rgba(255,255,255,0.1)', cursor: 'pointer',
-    textDecoration: 'none', transition: 'background 0.15s, color 0.15s',
-  };
-
+//The sidebar with the profile info and links.  Persistent across the app.
+function Sidebar({ onClear }) {
+  //Links on the sidebar
   const links = [
     { label: 'GitHub', icon: <GithubIcon />, href: 'https://github.com/Joseph-dias' },
     { label: 'LinkedIn', icon: <LinkedinIcon />, href: 'https://linkedin.com/in/joey-dias' },
   ];
 
-  return (
-    <aside style={{
-      width: 280, flexShrink: 0,
-      background: '#0f172a',
-      borderRight: '1px solid rgba(255,255,255,0.06)',
-      display: 'flex', flexDirection: 'column',
-      padding: '32px 24px 24px',
-      overflowY: 'auto',
-    }}>
-      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'flex-start', gap: 16 }}>
-        <Avatar size={64} fontSize={24} />
+  return ( // Renders the actual sidebar
+    <aside className="sidebar">
+      <div className="sidebar__profile">
+        <Avatar size={64} />
         <div>
-          <h1 style={{ color: '#f1f5f9', fontWeight: 700, fontSize: 20, lineHeight: 1.2 }}>Joey Dias</h1>
-          <p style={{ color: '#94a3b8', fontSize: 13, marginTop: 4, lineHeight: 1.5 }}>
+          <h1 className="sidebar__name">Joey Dias</h1>
+          <p className="sidebar__title">
             Senior Software Engineer<br />
-            <span style={{ color: '#64748b', fontSize: 12 }}>Alliance Defending Freedom</span>
+            <span className="sidebar__company">Alliance Defending Freedom</span>
           </p>
-          <div style={{ display: 'flex', gap: 8, marginTop: 8, flexWrap: 'wrap' }}>
-            <span style={{ color: '#64748b', fontSize: 12, display: 'flex', alignItems: 'center', gap: 4 }}>
+          <div className="sidebar__meta">
+            <span className="sidebar__location">
               <PinIcon /> Tillamook, OR
             </span>
-            <span style={{ color: '#64748b', fontSize: 12 }}>· 7+ yrs</span>
+            <span className="sidebar__experience">· 7+ yrs</span>
           </div>
         </div>
 
-        <p style={{
-          color: '#94a3b8', fontSize: 13, lineHeight: 1.6,
-          borderLeft: `2px solid ${ACCENT_COLOR}`, paddingLeft: 12,
-          fontStyle: 'italic',
-        }}>
+        {/* AI instructions */}
+        <p className="sidebar__quote">
           "Ask me anything about Joey's background, projects, or working style."
         </p>
 
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6, marginTop: 4 }}>
-          {['Blazor', 'Salesforce', 'C# / .NET', 'Python', 'AI/RAG'].map(skill => (
-            <span key={skill} style={{
-              padding: '3px 9px', borderRadius: 999, fontSize: 11, fontWeight: 500,
-              background: `${ACCENT_COLOR}20`, color: ACCENT_COLOR,
-              border: `1px solid ${ACCENT_COLOR}30`,
-            }}>{skill}</span>
+        <div className="sidebar__skills">
+          {['Blazor', 'Salesforce', 'C# / .NET', 'Python', 'React', 'AI/RAG'].map(skill => (
+            <span key={skill} className="skill-tag">{skill}</span>
           ))}
         </div>
       </div>
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '24px 0' }} />
+      <div className="divider" />
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
-        <p style={{ color: '#475569', fontSize: 11, fontWeight: 600, textTransform: 'uppercase', letterSpacing: '0.08em', marginBottom: 4 }}>Links</p>
+      <div className="sidebar__links">
+        <p className="links-label">Links</p>
         {links.map(({ label, icon, href }) => (
-          <a key={label} href={href} target="_blank" rel="noopener noreferrer"
-            style={chipStyle}
-            onMouseEnter={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.12)'; e.currentTarget.style.color = '#f1f5f9'; }}
-            onMouseLeave={e => { e.currentTarget.style.background = 'rgba(255,255,255,0.07)'; e.currentTarget.style.color = '#cbd5e1'; }}
-          >
+          <a key={label} href={href} target="_blank" rel="noopener noreferrer" className="sidebar-link">
             {icon} {label}
-            <svg style={{ marginLeft: 'auto', opacity: 0.4 }} width="10" height="10" viewBox="0 0 10 10" fill="none">
+            <svg className="sidebar-link__ext" width="10" height="10" viewBox="0 0 10 10" fill="none">
               <path d="M2 8L8 2M8 2H4M8 2V6" stroke="currentColor" strokeWidth="1.4" strokeLinecap="round"/>
             </svg>
           </a>
         ))}
       </div>
 
-      <div style={{ height: 1, background: 'rgba(255,255,255,0.06)', margin: '24px 0' }} />
+      <div className="divider" />
       <HowItWorks />
 
-      <div style={{ marginTop: 'auto', paddingTop: 24 }}>
-        <p style={{ color: '#334155', fontSize: 11, lineHeight: 1.5 }}>
+      <div className="sidebar__footer">
+        {/* This is the button to clear the conversation context */}
+        <button onClick={onClear} className="clear-btn">
+          Clear Conversation
+        </button>
+        <p className="sidebar__credit">
           Built by Joey · Powered by Grok-4
         </p>
       </div>
@@ -317,42 +226,25 @@ function Sidebar() {
 
 function WelcomeState({ onSelect }) {
   return (
-    <div style={{
-      flex: 1, display: 'flex', flexDirection: 'column',
-      alignItems: 'center', justifyContent: 'center',
-      gap: 32, padding: '40px 24px',
-      animation: 'fadeUp 0.3s ease',
-    }}>
-      <div style={{ textAlign: 'center' }}>
-        <div style={{
-          width: 56, height: 56, borderRadius: 16,
-          background: `linear-gradient(135deg, ${ACCENT_COLOR}30, ${ACCENT_COLOR}10)`,
-          border: `1px solid ${ACCENT_COLOR}30`,
-          display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px',
-        }}>
+    <div className="welcome">
+      <div className="welcome__hero">
+        <div className="welcome__icon">
           <svg width="24" height="24" viewBox="0 0 24 24" fill="none">
-            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill={ACCENT_COLOR}/>
+            <path d="M12 2C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm1 15h-2v-6h2v6zm0-8h-2V7h2v2z" fill="var(--accent)"/>
           </svg>
         </div>
-        <h2 style={{ color: '#1e293b', fontWeight: 700, fontSize: 22 }}>Hi, I'm Joey's AI Advocate</h2>
-        <p style={{ color: '#64748b', fontSize: 14, marginTop: 8, lineHeight: 1.6, maxWidth: 380 }}>
+        <h2 className="welcome__title">Hi, I'm Joey's AI Advocate</h2>
+        <p className="welcome__subtitle">
           I can answer questions about Joey's background, projects, and experience — grounded in his resume and public profiles.
         </p>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: 10, width: '100%', maxWidth: 460 }}>
-        <p style={{ color: '#94a3b8', fontSize: 12, fontWeight: 500, textTransform: 'uppercase', letterSpacing: '0.08em', textAlign: 'center' }}>Try asking</p>
+      <div className="welcome__starters">
+        <p className="starters-label">Try asking</p>
+        {/* Display the starter questions */}
         {STARTER_QUESTIONS.map((q, i) => (
-          <button key={i} onClick={() => onSelect(q)} style={{
-            background: '#fff', border: '1px solid #e2e8f0', borderRadius: 12,
-            padding: '12px 16px', textAlign: 'left', cursor: 'pointer',
-            color: '#334155', fontSize: 14, fontFamily: 'inherit', lineHeight: 1.4,
-            transition: 'all 0.15s', boxShadow: '0 1px 3px rgba(15,23,42,0.05)',
-          }}
-            onMouseEnter={e => { e.currentTarget.style.borderColor = ACCENT_COLOR; e.currentTarget.style.boxShadow = `0 0 0 3px ${ACCENT_COLOR}15`; }}
-            onMouseLeave={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = '0 1px 3px rgba(15,23,42,0.05)'; }}
-          >
-            <span style={{ color: ACCENT_COLOR, marginRight: 8, fontWeight: 600 }}>→</span>{q}
+          <button key={i} onClick={() => onSelect(q)} className="starter-btn">
+            <span className="starter-btn__arrow">→</span>{q}
           </button>
         ))}
       </div>
@@ -362,6 +254,7 @@ function WelcomeState({ onSelect }) {
 
 // ── Main App ──────────────────────────────────────────────────────────────────
 function App() {
+  //States
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
@@ -374,89 +267,103 @@ function App() {
     }
   }, []);
 
+  //Scroll to bottom whenever a message is added
   useEffect(() => { scrollToBottom(); }, [messages, scrollToBottom]);
 
+  //The user sends a message
   const sendMessage = useCallback(async (text) => {
     const userText = text || input.trim();
     if (!userText || loading) return;
     setInput('');
 
-    const userMsg = { id: Date.now(), role: 'user', text: userText };
-    const thinkingMsg = { id: Date.now() + 1, role: 'bot', thinking: true };
-
-    setMessages(prev => [...prev, userMsg, thinkingMsg]);
+    const now = Date.now();
+    const userMsgId = now; //Set IDs for specific messages.
+    const botId = now + 1;
+    setMessages(prev => [...prev,
+      { id: userMsgId, role: 'user', text: userText },
+      { id: botId, role: 'bot', thinking: true },
+    ]);
     setLoading(true);
 
+    //Call 'stream' with your message
     try {
-      const res = await fetch('/api/chat', {
+      const res = await fetch('/api/chat/stream', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ message: userText }),
       });
-
       if (!res.ok) throw new Error('API error');
-      const data = await res.json();
 
-      const sourceSet = SOURCE_SETS[Math.floor(Math.random() * SOURCE_SETS.length)];
-      const botMsg = {
-        id: Date.now() + 2,
-        role: 'bot',
-        text: data.response,
-        sources: sourceSet,
-      };
-      setMessages(prev => [...prev.filter(m => !m.thinking), botMsg]);
-    } catch (err) {
-      const errMsg = {
-        id: Date.now() + 3,
-        role: 'bot',
-        text: "Something went wrong — please try again.",
-      };
-      setMessages(prev => [...prev.filter(m => !m.thinking), errMsg]);
+      const reader = res.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = '';
+      let isFirst = true;
+
+      while (true) {
+        const { done, value } = await reader.read(); //Get response
+        if (done) break; //Break out when done
+        buffer += decoder.decode(value, { stream: true });
+        const parts = buffer.split('\n\n');
+        buffer = parts.pop();
+        for (const part of parts) {
+          if (!part.startsWith('data: ')) continue;
+          const payload = part.slice(6);
+          if (payload === '[DONE]') break;
+          const chunk = payload.replace(/\\n/g, '\n');
+          if (isFirst) {
+            setMessages(prev => prev.map(m =>
+              m.id === botId ? { ...m, thinking: false, text: chunk } : m
+            ));
+            isFirst = false;
+          } else {
+            setMessages(prev => prev.map(m =>
+              m.id === botId ? { ...m, text: m.text + chunk } : m
+            ));
+          }
+        }
+      }
+    } catch {
+      setMessages(prev => prev.map(m =>
+        m.id === botId ? { ...m, thinking: false, text: 'Something went wrong — please try again.' } : m
+      ));
     } finally {
       setLoading(false);
     }
-  }, [input, messages, loading]);
+  }, [input, loading]);
 
   const handleKeyDown = (e) => {
     if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); sendMessage(); }
   };
 
+  //Clear conversation and reset context
+  const clearConversation = useCallback(async () => {
+    await fetch('/api/reset', { method: 'POST' });
+    setMessages([]);
+  }, []);
+
   const hasMessages = messages.length > 0;
 
   return (
-    <div style={{ height: '100vh', display: 'flex', background: '#f8fafc', fontFamily: 'Inter, sans-serif', fontSize: 15 }}>
-      <Sidebar />
+    <div className="app">
+      <Sidebar onClear={clearConversation} />
 
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', minWidth: 0 }}>
+      <div className="main-panel">
         {/* Header */}
-        <header style={{
-          height: 60, flexShrink: 0,
-          borderBottom: '1px solid #e2e8f0',
-          display: 'flex', alignItems: 'center', gap: 12,
-          padding: '0 24px', background: '#fff',
-        }}>
-          <Avatar size={32} fontSize={12} />
+        <header className="header">
+          <Avatar size={32} />
           <div>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <span style={{ fontWeight: 600, color: '#1e293b', fontSize: 14 }}>🤖 Joey's AI Advocate</span>
+            <div className="header__info">
+              <span className="header__name">🤖 Joey's AI Advocate</span>
               <StatusDot />
-              <span style={{ color: '#22c55e', fontSize: 11, fontWeight: 500 }}>Active</span>
+              <span className="header__status-text">Active</span>
             </div>
-            <p style={{ color: '#94a3b8', fontSize: 11 }}>Grounded in Joey's resume &amp; public profiles</p>
+            <p className="header__subtitle">Grounded in Joey's resume &amp; public profiles</p>
           </div>
-          <div style={{ marginLeft: 'auto' }}>
-            <span style={{
-              padding: '4px 10px', borderRadius: 999, fontSize: 11, fontWeight: 500,
-              background: '#f1f5f9', color: '#64748b', border: '1px solid #e2e8f0',
-            }}>Grok-4 powered</span>
-          </div>
+          <span className="header__badge">Grok-4 powered</span>
         </header>
 
         {/* Message thread */}
-        <div ref={threadRef} style={{
-          flex: 1, overflowY: 'auto', padding: '24px',
-          display: 'flex', flexDirection: 'column', gap: 20,
-        }}>
+        <div ref={threadRef} className="thread">
           {!hasMessages ? (
             <WelcomeState onSelect={sendMessage} />
           ) : (
@@ -469,19 +376,8 @@ function App() {
         </div>
 
         {/* Input bar */}
-        <div style={{
-          borderTop: '1px solid #e2e8f0', background: '#fff',
-          padding: '16px 24px',
-        }}>
-          <div style={{
-            display: 'flex', gap: 10, alignItems: 'flex-end',
-            background: '#f8fafc', border: '1px solid #e2e8f0',
-            borderRadius: 14, padding: '10px 12px 10px 16px',
-            transition: 'border-color 0.15s, box-shadow 0.15s',
-          }}
-            onFocusCapture={e => { e.currentTarget.style.borderColor = ACCENT_COLOR; e.currentTarget.style.boxShadow = `0 0 0 3px ${ACCENT_COLOR}18`; }}
-            onBlurCapture={e => { e.currentTarget.style.borderColor = '#e2e8f0'; e.currentTarget.style.boxShadow = 'none'; }}
-          >
+        <div className="input-bar">
+          <div className="input-wrapper">
             <textarea
               ref={inputRef}
               value={input}
@@ -490,12 +386,7 @@ function App() {
               placeholder="Ask about Joey's background, projects, or experience…"
               rows={1}
               disabled={loading}
-              style={{
-                flex: 1, border: 'none', background: 'transparent', resize: 'none',
-                fontFamily: 'inherit', fontSize: 14, color: '#1e293b', lineHeight: 1.5,
-                outline: 'none', minHeight: 22, maxHeight: 140,
-                scrollbarWidth: 'none',
-              }}
+              className="input-textarea"
               onInput={e => {
                 e.target.style.height = 'auto';
                 e.target.style.height = Math.min(e.target.scrollHeight, 140) + 'px';
@@ -504,22 +395,14 @@ function App() {
             <button
               onClick={() => sendMessage()}
               disabled={!input.trim() || loading}
-              style={{
-                width: 36, height: 36, borderRadius: 10, border: 'none',
-                background: input.trim() && !loading ? ACCENT_COLOR : '#e2e8f0',
-                color: input.trim() && !loading ? '#fff' : '#94a3b8',
-                cursor: input.trim() && !loading ? 'pointer' : 'default',
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                transition: 'all 0.15s', flexShrink: 0,
-                transform: input.trim() && !loading ? 'scale(1)' : 'scale(0.95)',
-              }}
+              className="send-btn"
             >
               <svg width="16" height="16" viewBox="0 0 16 16" fill="none">
                 <path d="M14 8L2 2l2 6-2 6 12-6z" fill="currentColor"/>
               </svg>
             </button>
           </div>
-          <p style={{ color: '#94a3b8', fontSize: 11, marginTop: 8, textAlign: 'center' }}>
+          <p className="input-hint">
             Powered by Grok-4 · Grounded in Joey's resume documents
           </p>
         </div>
@@ -551,6 +434,7 @@ function PinIcon() {
   );
 }
 
+//Crete the React app and render it to the DOM
 const root = ReactDOM.createRoot(document.getElementById('root'));
 root.render(<App />);
 </script>
