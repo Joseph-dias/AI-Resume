@@ -1,3 +1,5 @@
+from collections.abc import Iterator
+
 from xai_sdk import Client
 from xai_sdk.chat import system, user
 from xai_sdk.tools import collections_search, web_search
@@ -5,26 +7,26 @@ from xai_sdk.tools import collections_search, web_search
 
 class ResumeChat:
     def __init__(self, client: Client, collection_id: str, model: str = "grok-4"):
-        self._chat = client.chat.create(
-            model=model,
-            tools=[
-                collections_search(
-                    collection_ids=[collection_id],
-                    retrieval_mode="hybrid",  # combines keyword + semantic search
-                ),
-                web_search(
-                    allowed_domains=[
-                        "linkedin.com",
-                        "16personalities.com",
-                        "github.com",
-                        "stackoverflow.com",
-                    ]
-                ),
-            ],
-        )
+        self._client = client
+        self._model = model
+        self._tools = [
+            collections_search(
+                collection_ids=[collection_id],
+                retrieval_mode="hybrid",  # combines keyword + semantic search
+            ),
+            web_search(
+                allowed_domains=[
+                    "linkedin.com",
+                    "16personalities.com",
+                    "github.com",
+                    "stackoverflow.com",
+                ]
+            ),
+        ]
+        self._chat = client.chat.create(model=model, tools=self._tools)
 
         #System prompt to define exactly what the AI should do and should focus on.
-        self._chat.append(system(
+        self._system_message = system(
             # --- ROLE ---
             "You are a professional advocate for Joseph Dias, presenting his background "
             "to recruiters, hiring managers, and professional contacts. "
@@ -87,21 +89,23 @@ class ResumeChat:
             "have no information about them. Focus the response on what Joey brings.\n\n"
             "Scope: Politely but firmly decline questions unrelated to Joey's professional "
             "background and capabilities. A one-sentence redirect is sufficient."
-        ))
+        )
+        self._chat.append(self._system_message)
+
+    def reset(self):
+        self._chat = self._client.chat.create(model=self._model, tools=self._tools)
+        self._chat.append(self._system_message)
 
     def ask(self, question: str) -> str:
         self._chat.append(user(question))
         response = self._chat.sample()
         return response.content
 
-    def run(self):
-        print("Resume assistant ready. Ask me anything about Joey's background (Ctrl+C to quit).\n")
-        while True:
-            try:
-                question = input("You: ").strip()
-            except (KeyboardInterrupt, EOFError):
-                print("\nGoodbye!")
-                break
-            if not question:
-                continue
-            print(f"Grok: {self.ask(question)}\n")
+    def stream(self, question: str) -> Iterator[str]:
+        self._chat.append(user(question))
+        response = None
+        for response, chunk in self._chat.stream():
+            if chunk.content:
+                yield chunk.content
+        if response is not None:
+            self._chat.append(response)
