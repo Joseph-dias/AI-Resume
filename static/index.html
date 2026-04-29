@@ -157,7 +157,7 @@ function HowItWorks() {
 }
 
 //The sidebar with the profile info and links.  Persistent across the app.
-function Sidebar({ onClear }) {
+function Sidebar({ onClear, isOpen, onClose }) {
   //App version
   const [appVersion, setAppVersion] = React.useState('...');
   React.useEffect(() => {
@@ -174,7 +174,13 @@ function Sidebar({ onClear }) {
   ];
 
   return ( // Renders the actual sidebar
-    <aside className="sidebar">
+    <aside className={isOpen ? 'sidebar sidebar--open' : 'sidebar'}>
+      <button className="sidebar__close" onClick={onClose} aria-label="Close menu">
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true">
+          <line x1="2" y1="2" x2="14" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+          <line x1="14" y1="2" x2="2" y2="14" stroke="currentColor" strokeWidth="2" strokeLinecap="round"/>
+        </svg>
+      </button>
       <div className="sidebar__profile">
         <Avatar size={64} />
         <div>
@@ -262,12 +268,39 @@ function WelcomeState({ onSelect }) {
   );
 }
 
+// ── Header ────────────────────────────────────────────────────────────────
+function Header({ onMenuClick }) {
+  return (
+    <header className="header">
+      <button className="menu-btn" onClick={onMenuClick} aria-label="Open menu">
+        <svg width="20" height="20" viewBox="0 0 20 20" fill="none" aria-hidden="true">
+          <rect x="2" y="4"  width="16" height="2" rx="1" fill="currentColor"/>
+          <rect x="2" y="9"  width="16" height="2" rx="1" fill="currentColor"/>
+          <rect x="2" y="14" width="16" height="2" rx="1" fill="currentColor"/>
+        </svg>
+      </button>
+      <Avatar size={32} />
+      <div>
+        <div className="header__info">
+          <span className="header__name">🤖 Joey's AI Advocate</span>
+          <StatusDot />
+          <span className="header__status-text">Active</span>
+        </div>
+        <p className="header__subtitle">Grounded in Joey's resume &amp; public profiles</p>
+      </div>
+      <span className="header__badge">Grok-4 powered</span>
+    </header>
+  );
+}
+
 // ── Main App ──────────────────────────────────────────────────────────────────
 function App() {
   //States
   const [messages, setMessages] = useState([]);
   const [input, setInput] = useState('');
   const [loading, setLoading] = useState(false);
+  const [sidebarOpen, setSidebarOpen] = useState(false); //State for sidebar open/close
+  const closeSidebar = useCallback(() => setSidebarOpen(false), []); //Use the same setSidebar function
   const threadRef = useRef(null);
   const inputRef = useRef(null);
 
@@ -355,22 +388,14 @@ function App() {
 
   return (
     <div className="app">
-      <Sidebar onClear={clearConversation} />
+      <Sidebar onClear={clearConversation} isOpen={sidebarOpen} onClose={closeSidebar} />
+      <div
+        className={sidebarOpen ? 'sidebar-backdrop sidebar-backdrop--visible' : 'sidebar-backdrop'}
+        onClick={closeSidebar}
+      />
 
       <div className="main-panel">
-        {/* Header */}
-        <header className="header">
-          <Avatar size={32} />
-          <div>
-            <div className="header__info">
-              <span className="header__name">🤖 Joey's AI Advocate</span>
-              <StatusDot />
-              <span className="header__status-text">Active</span>
-            </div>
-            <p className="header__subtitle">Grounded in Joey's resume &amp; public profiles</p>
-          </div>
-          <span className="header__badge">Grok-4 powered</span>
-        </header>
+        <Header onMenuClick={() => setSidebarOpen(true)} />
 
         {/* Message thread */}
         <div ref={threadRef} className="thread">
